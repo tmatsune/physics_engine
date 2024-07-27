@@ -10,10 +10,6 @@
 #include "../rigid_body/rigid_body.h"
 #include "../utils/render.h"
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 640
-#define CELL_SIZE 32
-
 typedef uint32_t u32;
 typedef uint8_t u8;
 
@@ -26,10 +22,12 @@ typedef struct {
   int screen_height;
   int cell_size;
   key_state *keys;
+  float dt;
   bool quit;
   SDL_Window *window;
   SDL_Renderer *renderer;
-  dynamic_array *circles; 
+  dynamic_array *circles;
+  dynamic_array *boxes;
   rigid_body *main_body;
 } game;
 
@@ -39,7 +37,4 @@ void game_render(game *g);
 void game_input(game *g);
 void game_run(game *g);
 
-
-
 #endif // !GAME_H
-

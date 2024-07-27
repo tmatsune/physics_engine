@@ -9,15 +9,20 @@
 #include <math.h>
 #include "../assert/assert.h"
 
+/*
+ 640 meters by 640 meters 
+ seconds 
+*/ 
 typedef uint32_t u32;
 typedef uint8_t u8;
 
 #define PI 3.1415926
-
 #define RED 0xFFFF0000
 #define BLUE 0xFF0000FF
 #define GREEN 0xFF00FF00
-
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 640
+#define CELL_SIZE 32
 
 void print(char *str);
 void print_int(int num);
@@ -38,7 +43,10 @@ typedef struct {
   const float l = length(_u); \
   (vec2) {_u.x / l, _u.y / l}; \
 })
-
+#define vec_copy(v)({ \
+  const vec2 a = (v);  \
+  (vec2) {a.x, a.y}; \
+})
 #define vec_add(v0, v1)({ \
   const vec2 a = (v0), b = (v1); \
   (vec2) {a.x + b.x, a.y + b.y}; \
@@ -64,7 +72,7 @@ typedef struct {
   (int) sqrt( pow( abs(_x1 - _x2), 2 ) + pow( abs(_y1 - _y2), 2 ) );  \
 })
 
-
+// DYNAMIC ARRAY 
 typedef struct {
   int count;
   int max_count;
@@ -72,14 +80,22 @@ typedef struct {
 } dynamic_array;
 
 void array_init(dynamic_array *array);
+
 void array_append(dynamic_array *array, const void *item, size_t item_size);
+
 void *array_pop(dynamic_array *array);
+
 void *array_get(dynamic_array *array, size_t index);
+
 void array_free(dynamic_array *array);
+
+// PRINT 
+void print(char *str);
+
+void print_int(int num);
 
 void vec_print(const vec2 v);
 
 
+
 #endif // !UTILS_H
-
-

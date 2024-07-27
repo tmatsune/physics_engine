@@ -9,7 +9,7 @@ static void create_circles(game *g){
   
   srand(time(NULL));
 
-  for(int i = 0; i < 6; i++){
+  for(int i = 0; i < 0; i++){
     int min = 10;
     int max = 520;
     int x = rand() % (max - min + 1) + min;
@@ -33,8 +33,30 @@ static void create_circles(game *g){
 
 }
 
+static void create_boxes(game *g){
+  srand(time(NULL));
+
+  for(int i = 0; i < 0; i++){
+    int min = 10;
+    int max = 520;
+    int x = rand() % (max - min + 1) + min;
+    int y = rand() % (max - min + 1) + min;
+    int w = 20, h = 20;
+    
+    rigid_body *body = malloc(sizeof(rigid_body));
+    ASSERT(body == NULL, "FAILED TO ALLOCATE MEMORY FOR BODY");
+    box_init(body, x, y, w, h, 1, 1, 1, GREEN);
+    array_append(g->boxes, body, sizeof(rigid_body));
+
+    if(i == 0) g->main_body = body;
+
+  }
+
+}
+
 static void test_init(game *g){
   create_circles(g);
+  create_boxes(g);
 }
 
 void game_init(game *g){
@@ -50,6 +72,7 @@ void game_init(game *g){
   g->cell_size = CELL_SIZE;
   g->quit = false;
   g->keys = keys;
+  g->dt = 0;
 
     ASSERT(
         SDL_Init(SDL_INIT_VIDEO),
@@ -102,19 +125,18 @@ void game_render(game *g){
 
 
 
-
+  /*
   for(int i = 0; i < g->circles->count; i++){
     rigid_body *circle = (rigid_body*)array_get(g->circles, i);
     circle_render(circle, g->renderer);
-    circle_update(circle);
+    circle_update(circle, g->dt);
     if(i == 0){
       control_body(circle, g->keys->left, g->keys->right, g->keys->up, g->keys->down); 
       rigid_body *other = (rigid_body*) array_get(g->circles, 1);
-      circle_collision(circle, other);
-    
+      circle_on_circle_collision(circle, other);
     }
-    
   }
+  */
 
 
 
@@ -130,8 +152,7 @@ void game_input(game *g){
  
   if (keystate[SDL_SCANCODE_ESCAPE]){
     g->quit = true;
-  }
-   
+  } 
 
   if (keystate[SDL_SCANCODE_RIGHT]){
     g->keys->right = 1;
@@ -161,11 +182,38 @@ void game_input(game *g){
 }
 
 void game_run(game *g){
+  
+  uint32_t last_time = SDL_GetTicks();
+  
+  uint32_t frame_count __attribute__((unused)) = 0;
+  uint32_t fps_time __attribute__((unused)) = SDL_GetTicks();
+  float fps __attribute__((unused))= 0.0f;
+
+  // ------ MAIN LOOP ------ // 
   while(!g->quit){
+    uint32_t current_time = SDL_GetTicks();
+    float dt = (current_time - last_time) / 1000.0f; // Convert to seconds
+    last_time = current_time;
+  
     game_update(g);
     game_render(g);
     game_input(g);
-  }
+
+    g->dt = dt;
+
+    /* CHECK FPS
+    frame_count++;
+    if (current_time - fps_time >= 1000) {
+        fps = frame_count / ((current_time - fps_time) / 1000.0f);
+        printf("FPS: %.2f\n", fps);
+        frame_count = 0;
+        fps_time = current_time;
+    }
+    */
+
+    SDL_Delay(16);
+  } 
+  // ---------------------- // 
 
   SDL_DestroyRenderer(g->renderer);
   SDL_DestroyWindow(g->window);

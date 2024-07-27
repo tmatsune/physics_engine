@@ -1,6 +1,6 @@
 #include "utils.h"
 
-
+// ------------ DYNAMIC_ARRAY ------------- // 
 void array_init(dynamic_array *array){
   array->count = 0;
   array->max_count = 5;
@@ -45,12 +45,9 @@ void array_free(dynamic_array *array){
   array->count = 0;
   array->max_count = 0;
 }
- 
 
-
-
+// ------------ PRINT ------------ //  
 void print(char *str){ printf("%s\n", str); }
 void print_int(int num){ printf("%d\n", num); }
-
-void vec_print(const vec2 v){ printf("X: %f, Y: %f", v.x, v.y); }
+void vec_print(const vec2 v){ printf("X: %f, Y: %f\n", v.x, v.y); }
 

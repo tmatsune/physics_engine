@@ -1,0 +1,16 @@
+
+
+PHYSICS COLLISIONS
+  Elastic Collisions:
+    - objects involved remain seperate
+    - total kinetic energy and momentum will be conserved 
+    - no energy lost
+    - Momentum is a vector quantity 
+      - mass * vel 
+    - Kinetic Energy 
+      - energy an object possess by virtue of its motion 
+      - ke = (1/2)mv^2    
+
+
+  Inelastic Collision: 
+    - two seperate objects collide and move as one mass 

@@ -1,18 +1,28 @@
 #include "render.h"
 
-void draw_rect(int x, int y, int h, int w, uint32_t color, SDL_Renderer *renderer){
-  SDL_Rect rect;
-  rect.x = x;
-  rect.y = y;
-  rect.w = w;
-  rect.h = h;
-  SDL_SetRenderDrawColor(
-    renderer,
-    (color >> 16) & 0xFF,
-    (color >> 8) & 0xFF, 
-    color & 0xFF,
-    (color >> 24) & 0xFF);
-  SDL_RenderFillRect(renderer, &rect);
+// --- STATIC FUNCS --- // 
+static SDL_Texture* create_filled_rect_texture(SDL_Renderer *renderer, int w, int h, SDL_Color color) {
+    SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+    if (texture == NULL) {
+        printf("SDL_CreateTexture Error: %s\n", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_SetRenderTarget(renderer, texture);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderTarget(renderer, NULL);
+
+    return texture;
+}
+
+void draw_rect(int x, int y, int w, int h, uint32_t color, SDL_Renderer *renderer){
+  (void)color;
+  SDL_Color rect_color = { 255, 0, 0, 255 };
+  SDL_Texture *texture = create_filled_rect_texture(renderer, w, h, rect_color);
+  SDL_Rect dstrect = { x, y, w, h };
+  SDL_Point center = { w / 2, h / 2 };
+  SDL_RenderCopyEx(renderer, texture, NULL, &dstrect, 10, &center, SDL_FLIP_NONE);
 }
 
 void draw_circle(int x, int y, int radius, uint32_t color, SDL_Renderer *renderer){
@@ -26,7 +36,7 @@ void draw_circle(int x, int y, int radius, uint32_t color, SDL_Renderer *rendere
 
     int offsetX = radius;
     int offsetY = 0;
-    int err = 0;
+    int err = 1 - radius;
 
     while (offsetX >= offsetY) {
         SDL_RenderDrawPoint(renderer, x + offsetX, y + offsetY);
@@ -38,7 +48,7 @@ void draw_circle(int x, int y, int radius, uint32_t color, SDL_Renderer *rendere
         SDL_RenderDrawPoint(renderer, x + offsetY, y - offsetX);
         SDL_RenderDrawPoint(renderer, x + offsetX, y - offsetY);
 
-        offsetY += 1;
+        offsetY++;
         if (err <= 0) {
             err += 2 * offsetY + 1;
         }
@@ -49,46 +59,5 @@ void draw_circle(int x, int y, int radius, uint32_t color, SDL_Renderer *rendere
         }
     }
 }
-
-
-void draw_circle_fill(int x, int y, int radius, uint32_t color, SDL_Renderer *renderer){
-    // Extract the RGBA components from the color
-    Uint8 r = (color >> 24) & 0xFF;
-    Uint8 g = (color >> 16) & 0xFF;
-    Uint8 b = (color >> 8) & 0xFF;
-    Uint8 a = color & 0xFF;
-
-    // Set the draw color
-    SDL_SetRenderDrawColor(renderer, r, g, b, a);
-
-    int offsetX = radius;
-    int offsetY = 0;
-    int err = 0;
-
-    while (offsetX >= offsetY) {
-        for (int i = -offsetX; i <= offsetX; ++i) {
-            SDL_RenderDrawPoint(renderer, x + i, y + offsetY);
-            SDL_RenderDrawPoint(renderer, x + i, y - offsetY);
-        }
-        for (int i = -offsetY; i <= offsetY; ++i) {
-            SDL_RenderDrawPoint(renderer, x + i, y + offsetX);
-            SDL_RenderDrawPoint(renderer, x + i, y - offsetX);
-        }
-
-        offsetY += 1;
-        if (err <= 0) {
-            err += 2 * offsetY + 1;
-        }
-
-        if (err > 0) {
-            offsetX -= 1;
-            err -= 2 * offsetX + 1;
-        }
-    }
-}
-
-
-
-
 
 

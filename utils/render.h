@@ -4,10 +4,7 @@
 #include <stdint.h>
 #include "SDL.h"
 
-
-void draw_rect(int x, int y, int h, int w, uint32_t color, SDL_Renderer *renderer);
+void draw_rect(int x, int y, int w, int h, uint32_t color, SDL_Renderer *renderer);
 void draw_circle(int x, int y, int radius, uint32_t color, SDL_Renderer *renderer);
-void draw_circle_fill(int x, int y, int radius, uint32_t color, SDL_Renderer *renderer);
-
 
 #endif 
