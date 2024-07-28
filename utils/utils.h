@@ -7,8 +7,6 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <math.h>
-#include "../assert/assert.h"
-
 /*
  640 meters by 640 meters 
  seconds 
@@ -59,6 +57,10 @@ typedef struct {
   const vec2 v = (v0);  \
   (vec2) {v.x * scale, v.y * scale}; \
 }) 
+#define vec_new_rotate(vec, theta) ({ \
+  const vec2 v = (vec); \
+  (vec2) {(v.x*cos(theta)) - (v.y*sin(theta)), (v.x*sin(theta))+(v.y*cos(theta)}; \
+})
 #define min(a, b) ({ \
   __typeof__(a) _a = (a), _b = (b); \
   _a < _b ? _a : _b; \
@@ -71,12 +73,17 @@ typedef struct {
   const int _x1 = (x1), _y1 = (y1), _x2 = (x2), _y2 = (y2); \
   (int) sqrt( pow( abs(_x1 - _x2), 2 ) + pow( abs(_y1 - _y2), 2 ) );  \
 })
+#define rad(ang) ({  \
+  __typeof__(ang) _ang = (ang); \
+  (float) _ang * (PI / 180.0); \
+})
+void vec_rotate(vec2 *v, float theta);
 
 // DYNAMIC ARRAY 
 typedef struct {
-  int count;
-  int max_count;
   void **items;
+  size_t count;
+  size_t max_count;
 } dynamic_array;
 
 void array_init(dynamic_array *array);
@@ -91,11 +98,9 @@ void array_free(dynamic_array *array);
 
 // PRINT 
 void print(char *str);
-
 void print_int(int num);
-
 void vec_print(const vec2 v);
-
+void print_float(float num);
 
 
 #endif // !UTILS_H

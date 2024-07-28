@@ -26,8 +26,7 @@ typedef struct {
   bool quit;
   SDL_Window *window;
   SDL_Renderer *renderer;
-  dynamic_array *circles;
-  dynamic_array *boxes;
+  dynamic_array *objects;
   rigid_body *main_body;
 } game;
 

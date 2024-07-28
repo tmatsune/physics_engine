@@ -1,6 +1,5 @@
 #include "rigid_body.h"
 
-
 // ----------- ALL FUNCTIONS ----------- //
 
 #define UK .04
@@ -20,19 +19,34 @@ static void add_to_pos(rigid_body *self, const float dx, const float dy){ self->
 static void sub_from_pos(rigid_body *self, const float dx, const float dy){ self->pos.x -= dx; self->pos.y -= dy; }
 static void add_to_vel(rigid_body *self, const float dx, const float dy){ self->vel.x += dx; self->vel.y += dy; }
 
-// NON-STATIC FUNCS
+static void handle_angle(physics_object *self){
+  if(self->body.angle > 359) self->body.angle -= 360;
+  if(self->body.angle < 0) self->body.angle += 360;
 
+}
+
+// NON-STATIC FUNCS
 void apply_force(rigid_body *self, vec2 force){
   self->accel.x += force.x;
   self->accel.y += force.y;
 } 
-void control_body(rigid_body *self, int left, int right, int up, int down){
+void control_body(physics_object *self, int *lrud, int *wasd){
   vec2 force = {0, 0};
-  if (left) force.x -= 600; // Arbitrary force value
-  if (right) force.x += 600;
-  if (up) force.y -= 600;
-  if (down) force.y += 600;
-  apply_force(self, force);
+  if (lrud[0]) force.x -= 600; // Arbitrary force value
+  if (lrud[1]) force.x += 600;
+  if (lrud[2]) force.y -= 600;
+  if (lrud[3]) force.y += 600;
+  apply_force(&self->body, force);
+  float ang = 0;
+  if(wasd[0]){};
+  if(wasd[1]){self->body.angle -= 6; ang = -6;}
+  if(wasd[2]){};
+  if(wasd[3]){self->body.angle += 6; ang = 6;}
+  
+  for(int i = 0; i < 4; i++){
+    vec_rotate(&self->shape.b.points[i], rad(ang)); 
+  }
+
 }
 
 void body_move(rigid_body *self, float dt){
@@ -46,6 +60,43 @@ void body_move(rigid_body *self, float dt){
   self->accel.x = 0;
   self->accel.y = 0;
 }
+
+void change_property(rigid_body *self, shape_property prop, float new_num){
+  switch(prop){
+    case PROP_HEIGHT: {
+      self->height = new_num;
+      break;
+    } 
+     case PROP_WIDTH: {
+      self->width = new_num;
+      break;
+    } 
+     case PROP_X: {
+      self->pos.x = new_num;
+      break;
+    } 
+     case PROP_Y: {
+      self->pos.y = new_num;
+      break;
+    } 
+     case PROP_COLOR: {
+      self->color = new_num;
+      break;
+    } 
+     case PROP_ANGLE: {
+      self->angle = new_num;
+      break;
+    } 
+     case PROP_MASS: {
+      self->mass = new_num;
+      break;
+    } 
+    default: {
+      break;
+    } 
+  }
+}
+
 
 // COLLISIONS
 void circle_on_circle_collision(rigid_body *self, rigid_body *other){
@@ -82,28 +133,35 @@ void circle_on_circle_collision(rigid_body *self, rigid_body *other){
 
 // ------------ BOX FUNCTIONS --------- // 
 
-void box_init(rigid_body *rb, float x, float y, float width, float height, float mass, float density, float restitution, uint32_t color){
-  rb->pos = (vec2){x, y};
-  rb->vel = (vec2){0, 0};
-  rb->accel = (vec2){0, 0};
-  rb->mass = mass; 
-  rb->density = density;
-  rb->restitution = restitution;
-  rb->height = height;
-  rb->width = width;
-  rb->area = height * width;
-  rb->color = color;
-  rb->shape = BOX;
+void box_init(rigid_body *self, float x, float y, float width, float height, float mass, float density, float restitution, uint32_t color){
+  self->pos = (vec2){x, y};
+  self->vel = (vec2){0, 0};
+  self->accel = (vec2){0, 0};
+  self->angle = 0;
+  self->mass = mass; 
+  self->density = density;
+  self->restitution = restitution;
+  self->height = height;
+  self->width = width;
+  self->area = height * width;
+  self->color = color;
+  self->shape = SHAPE_BOX;
 }
 
-void box_render(rigid_body *rb, SDL_Renderer *renderer){
-  draw_rect(rb->pos.x, rb->pos.y, rb->width, rb->height, rb->color, renderer);
-} 
+void box_render(physics_object *self, SDL_Renderer *renderer){
+  //draw_rect(self->body.pos.x, self->body.pos.y, self->shape.b.width, self->shape.b.height, self->body.color, self->body.angle, renderer);
+  for(int i = 0; i < 4; i++){
+    draw_rect(self->body.pos.x + (self->shape.b.points[i].x) , self->body.pos.y + (self->shape.b.points[i].y), 2, 2, BLUE, 0, renderer);
+    //self->shape.b.points[0].x
+  }
+}   
 
-void box_update(rigid_body *rb){
-  (void)rb;
+void box_update(physics_object *self, float dt){
+  body_move(&self->body, dt);
+  apply_friction_beta(&self->body);
+  handle_angle(self);
+  print_float(self->body.angle);
 }
-
 
 // ----------- CIRCLE FUNCTIONS ----------- // 
 
@@ -116,13 +174,14 @@ void circle_init(rigid_body *rb, float x, float y, float mass, float density, fl
   rb->pos = (vec2){x, y};
   rb->vel = (vec2){0, 0};
   rb->accel = (vec2){0, 0};
+  rb->angle = 0;
   rb->mass = mass; 
   rb->density = density;
   rb->restitution = restitution;
   rb->radius = radius;
   rb->area = PI * pow(radius, 2);
   rb->color = color;
-  rb->shape = CIRCLE;
+  rb->shape = SHAPE_CIRCLE;
 }
 
 void circle_render(rigid_body *self, SDL_Renderer *renderer){
@@ -137,6 +196,28 @@ void circle_update(rigid_body *self, float dt){
 }
 
 
+// --------------- PHYSICS OBJECT FUNCS ---------------- // 
 
+void box_shape_init(rigid_body *body, shape_struct *shape, float x, \
+                           float y, float width, float height, float mass, \
+                           float density, float restitution, uint32_t color ){
+  body->pos = (vec2){x, y};
+  body->vel = (vec2){0, 0};
+  body->accel = (vec2){0, 0};
+  body->angle = 0;
+  body->mass = mass;
+  body->density = density;
+  body->restitution = restitution;
+  body->radius = width * height;
+  body->color = color;  
+  shape->type = SHAPE_BOX;
+  shape->b.height = height;
+  shape->b.width = width;
+  shape->b.points[0] = (vec2){-6,-6};
+  shape->b.points[1] = (vec2){6,-6};
+  shape->b.points[2] = (vec2){-6,6};
+  shape->b.points[3] = (vec2){6,6};
+
+}
 
 

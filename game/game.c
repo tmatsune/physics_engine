@@ -5,61 +5,42 @@ static void keys_init(key_state *keys){
   keys->w = keys->a = keys->s = keys->d = 0;
   keys->left = keys->right = keys->up = keys->down = 0;
 }   
-static void create_circles(game *g){
-  
-  srand(time(NULL));
 
-  for(int i = 0; i < 0; i++){
-    int min = 10;
-    int max = 520;
-    int x = rand() % (max - min + 1) + min;
-    int y = rand() % (max - min + 1) + min;
-    int radius = rand() % (20 - 10 + 1) + 10;
-    
-    rigid_body *body = malloc(sizeof(rigid_body));
-    if (body == NULL) {
-        perror("Failed to allocate memory for body");
-        exit(EXIT_FAILURE);
-    }
+static void gen_objects(game *g){
 
-    circle_init(body, x, y, 1, 1, 1, radius, BLUE);   
-
-    array_append(g->circles, body, sizeof(rigid_body));
-
-    if(i == 0) 
-      g->main_body = body; 
-  
-  }
-
-}
-
-static void create_boxes(game *g){
-  srand(time(NULL));
-
-  for(int i = 0; i < 0; i++){
+  for(int i = 0; i < 3; i++){
     int min = 10;
     int max = 520;
     int x = rand() % (max - min + 1) + min;
     int y = rand() % (max - min + 1) + min;
     int w = 20, h = 20;
-    
-    rigid_body *body = malloc(sizeof(rigid_body));
-    ASSERT(body == NULL, "FAILED TO ALLOCATE MEMORY FOR BODY");
-    box_init(body, x, y, w, h, 1, 1, 1, GREEN);
-    array_append(g->boxes, body, sizeof(rigid_body));
-
-    if(i == 0) g->main_body = body;
-
+    physics_object *object = malloc(sizeof(physics_object));
+    if(object == NULL){
+      perror("Failed to allocate memory for body");
+      exit(EXIT_FAILURE); 
+    }
+    shape_type shape_t = SHAPE_BOX;
+    switch(shape_t){
+      case SHAPE_BOX: {
+        box_shape_init(&object->body, &object->shape, x, y, w, h, 1, 1, 1, RED);
+        break;
+      }
+      case SHAPE_CIRCLE: {
+        break;
+      }
+      default:{break;}
+    };
+    array_append(g->objects, object, sizeof(physics_object));
+  
   }
-
 }
 
 static void test_init(game *g){
-  create_circles(g);
-  create_boxes(g);
+  gen_objects(g);
 }
 
 void game_init(game *g){
+  srand(time(NULL));
 
   key_state *keys = (key_state *)malloc(sizeof(key_state));
   if (keys == NULL) {
@@ -96,13 +77,15 @@ void game_init(game *g){
     ASSERT(
         g->renderer == NULL,
         "failed to create SDL renderer: %s\n", SDL_GetError());
+  
+    g->objects = malloc(sizeof(dynamic_array));
+    ASSERT(g->objects == NULL, "Failed to allocate memory for all objs");
+    array_init(g->objects);
 
-  g->circles = malloc(sizeof(dynamic_array));
-  array_init(g->circles);
-
-  test_init(g);
+    test_init(g);
 
 }
+
 
 void game_update(game *g){
   SDL_Event ev;
@@ -113,7 +96,6 @@ void game_update(game *g){
           break;
       } 
   }
-  
 }
 
 void game_render(game *g){
@@ -122,23 +104,27 @@ void game_render(game *g){
 
   // ----- RENDER ----- // 
 
+  for(int i = 0; i < (int)g->objects->count; i++){
 
-
-
-  /*
-  for(int i = 0; i < g->circles->count; i++){
-    rigid_body *circle = (rigid_body*)array_get(g->circles, i);
-    circle_render(circle, g->renderer);
-    circle_update(circle, g->dt);
-    if(i == 0){
-      control_body(circle, g->keys->left, g->keys->right, g->keys->up, g->keys->down); 
-      rigid_body *other = (rigid_body*) array_get(g->circles, 1);
-      circle_on_circle_collision(circle, other);
+    physics_object *obj = (physics_object*)array_get(g->objects, i);
+    switch(obj->shape.type){
+      case SHAPE_BOX:{
+        box_render(obj, g->renderer);
+        box_update(obj, g->dt);
+        break;
+      }
+      case SHAPE_CIRCLE:{
+       
+        break;
+      }
     }
+    if(i == 0){
+      int lrud[] = {g->keys->left, g->keys->right, g->keys->up, g->keys->down};
+      int wasd[] = {g->keys->w, g->keys->a, g->keys->s, g->keys->d};
+      control_body(obj, lrud, wasd);
+    }
+ 
   }
-  */
-
-
 
 
    // ------------------ // 
@@ -178,6 +164,14 @@ void game_input(game *g){
     g->keys->down = 0;
   }
 
+  if (keystate[SDL_SCANCODE_W])  g->keys->w = 1;
+  else g->keys->w = 0;
+  if (keystate[SDL_SCANCODE_A])  g->keys->a = 1;
+  else g->keys->a = 0;
+  if (keystate[SDL_SCANCODE_S]) g->keys->s = 1;
+  else g->keys->s = 0;
+  if (keystate[SDL_SCANCODE_D]) g->keys->d = 1;
+  else g->keys->d = 0;
 
 }
 
@@ -214,6 +208,11 @@ void game_run(game *g){
     SDL_Delay(16);
   } 
   // ---------------------- // 
+  array_free(g->objects);
+  free(g->objects);
+
+  free(g->keys);
+
 
   SDL_DestroyRenderer(g->renderer);
   SDL_DestroyWindow(g->window);
