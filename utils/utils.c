@@ -1,6 +1,9 @@
 #include "utils.h"
 #include "../assert/assert.h"
 
+
+
+
 // ------------ DYNAMIC_ARRAY ------------- // 
 void vec_rotate(vec2 *v, float theta){
   float original_x = v->x;
@@ -57,5 +60,7 @@ void array_free(dynamic_array *array){
 // ------------ PRINT ------------ //  
 void print(char *str){ printf("%s\n", str); }
 void print_int(int num){ printf("%d\n", num); }
-void vec_print(const vec2 v){ printf("X: %f, Y: %f\n", v.x, v.y); }
+void vec_print(const vec2 v){ printf("VECTOR [ X: %f, Y: %f ]\n", v.x, v.y); }
 void print_float(float num){ printf("%f\n", num); }
+void endl(void){printf("\n");}
+

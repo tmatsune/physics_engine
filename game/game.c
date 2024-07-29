@@ -8,7 +8,7 @@ static void keys_init(key_state *keys){
 
 static void gen_objects(game *g){
 
-  for(int i = 0; i < 3; i++){
+  for(int i = 0; i < 2; i++){
     int min = 10;
     int max = 520;
     int x = rand() % (max - min + 1) + min;
@@ -22,7 +22,9 @@ static void gen_objects(game *g){
     shape_type shape_t = SHAPE_BOX;
     switch(shape_t){
       case SHAPE_BOX: {
-        box_shape_init(&object->body, &object->shape, x, y, w, h, 1, 1, 1, RED);
+        box_shape_init(&object->body, &object->shape, x, y, w, h, 1, 1, 1, (SDL_Color){ 255, 255, 255, 255 });
+        object->renderer = g->renderer;
+        object->len_points = 4;
         break;
       }
       case SHAPE_CIRCLE: {
@@ -122,6 +124,10 @@ void game_render(game *g){
       int lrud[] = {g->keys->left, g->keys->right, g->keys->up, g->keys->down};
       int wasd[] = {g->keys->w, g->keys->a, g->keys->s, g->keys->d};
       control_body(obj, lrud, wasd);
+      physics_object* other = (physics_object*)array_get(g->objects, 1);
+      bool colliding = polygon_collision(obj, other); 
+      if(colliding) print("COLLIDING");
+      else print("NOT COLLIDING");
     }
  
   }

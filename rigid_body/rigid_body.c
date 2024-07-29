@@ -3,6 +3,8 @@
 // ----------- ALL FUNCTIONS ----------- //
 
 #define UK .04
+
+
 //  STATIC FUNCS
 static void apply_friction_beta(rigid_body *self){ // later apply normal force
   vec2 friction = vec_scale(self->vel, -UK);
@@ -43,7 +45,7 @@ void control_body(physics_object *self, int *lrud, int *wasd){
   if(wasd[2]){};
   if(wasd[3]){self->body.angle += 6; ang = 6;}
   
-  for(int i = 0; i < 4; i++){
+  for(int i = 0; i < self->len_points; i++){
     vec_rotate(&self->shape.b.points[i], rad(ang)); 
   }
 
@@ -97,7 +99,6 @@ void change_property(rigid_body *self, shape_property prop, float new_num){
   }
 }
 
-
 // COLLISIONS
 void circle_on_circle_collision(rigid_body *self, rigid_body *other){
   int dist = get_distance(self->pos.x, self->pos.y, other->pos.x, other->pos.y);
@@ -131,6 +132,78 @@ void circle_on_circle_collision(rigid_body *self, rigid_body *other){
   }
 }
 
+static void vec_translate_world_pos(vec2 *v, float world_x, float world_y){
+  v->x = v->x + world_x;
+  v->y = v->y + world_y;
+}
+
+static void project_vertices(vec2 pos, vec2 *points, vec2 axis, float *mn, float *mx){
+  for(int i = 0; i < 4; i++){
+  
+    vec2 vertex = points[i];
+    vec_translate_world_pos(&vertex, pos.x, pos.y);
+    float projection = dot(vertex, axis);
+    if(projection < *mn){ *mn = projection; }
+    if(projection > *mx){ *mx = projection; }
+
+  }
+
+}
+
+bool polygon_collision(physics_object *self, physics_object *other){
+  
+  SDL_SetRenderDrawColor(self->renderer, 255, 0, 0, 255);
+  
+  for(int i = 0; i < self->len_points; i++){
+    vec2 va = self->shape.b.points[i];
+    vec2 vb = self->shape.b.points[(i + 1) % self->len_points];
+    vec_translate_world_pos(&va, self->body.pos.x, self->body.pos.y);
+    vec_translate_world_pos(&vb, self->body.pos.x, self->body.pos.y);
+
+    vec2 edge = vec_sub(vb, va);
+    vec2 normal_axis = (vec2){-edge.y, edge.x}; // normal that points away from edge polygon
+
+    //SDL_RenderDrawLine(self->renderer, va.x, va.y, va.x + ref_normal_axis.x, va.y + ref_normal_axis.y);
+    float max_a = -10000;
+    float min_a = 10000;
+    float max_b = -10000;
+    float min_b = 10000;
+
+    project_vertices(self->body.pos, self->shape.b.points, normal_axis, &min_a, &max_a);
+    project_vertices(other->body.pos, other->shape.b.points, normal_axis, &min_b, &max_b);
+
+
+    if( min_a >= max_b || min_b >= max_a ){
+      return false;
+    }
+    
+  }
+
+  for(int i = 0; i < self->len_points; i++){
+    vec2 va = other->shape.b.points[i];
+    vec2 vb = other->shape.b.points[(i + 1) % self->len_points];
+    vec_translate_world_pos(&va, other->body.pos.x, other->body.pos.y);
+    vec_translate_world_pos(&vb, other->body.pos.x, other->body.pos.y);
+
+    vec2 edge = vec_sub(vb, va);
+    vec2 normal_axis = (vec2){-edge.y, edge.x}; // normal that points away from edge polygon
+    float max_a = -10000;
+    float min_a = 10000;
+    float max_b = -10000;
+    float min_b = 10000;
+
+    project_vertices(other->body.pos, other->shape.b.points, normal_axis, &min_a, &max_a);
+    project_vertices(self->body.pos, self->shape.b.points, normal_axis, &min_b, &max_b);
+    // SDL_RenderDrawLine(self->renderer, va.x, va.y, vb.x, vb.y);
+
+    if( min_a >= max_b || min_b >= max_a ){
+      return false;
+    }
+    
+  }
+  return true;
+}
+
 // ------------ BOX FUNCTIONS --------- // 
 
 void box_init(rigid_body *self, float x, float y, float width, float height, float mass, float density, float restitution, uint32_t color){
@@ -150,9 +223,14 @@ void box_init(rigid_body *self, float x, float y, float width, float height, flo
 
 void box_render(physics_object *self, SDL_Renderer *renderer){
   //draw_rect(self->body.pos.x, self->body.pos.y, self->shape.b.width, self->shape.b.height, self->body.color, self->body.angle, renderer);
+  SDL_SetRenderDrawColor(self->renderer, 255, 0, 0, 255);
   for(int i = 0; i < 4; i++){
-    draw_rect(self->body.pos.x + (self->shape.b.points[i].x) , self->body.pos.y + (self->shape.b.points[i].y), 2, 2, BLUE, 0, renderer);
-    //self->shape.b.points[0].x
+    draw_rect(self->body.pos.x + (self->shape.b.points[i].x) , self->body.pos.y + (self->shape.b.points[i].y), 2, 2, self->body.sdl_color, 0, renderer);
+    vec2 va = self->shape.b.points[i];
+    vec2 vb = self->shape.b.points[(i + 1) % self->len_points];
+    vec_translate_world_pos(&va, self->body.pos.x, self->body.pos.y);
+    vec_translate_world_pos(&vb, self->body.pos.x, self->body.pos.y);
+    SDL_RenderDrawLine(self->renderer, va.x, va.y, vb.x, vb.y);
   }
 }   
 
@@ -160,7 +238,6 @@ void box_update(physics_object *self, float dt){
   body_move(&self->body, dt);
   apply_friction_beta(&self->body);
   handle_angle(self);
-  print_float(self->body.angle);
 }
 
 // ----------- CIRCLE FUNCTIONS ----------- // 
@@ -200,7 +277,7 @@ void circle_update(rigid_body *self, float dt){
 
 void box_shape_init(rigid_body *body, shape_struct *shape, float x, \
                            float y, float width, float height, float mass, \
-                           float density, float restitution, uint32_t color ){
+                           float density, float restitution, SDL_Color color ){
   body->pos = (vec2){x, y};
   body->vel = (vec2){0, 0};
   body->accel = (vec2){0, 0};
@@ -209,15 +286,15 @@ void box_shape_init(rigid_body *body, shape_struct *shape, float x, \
   body->density = density;
   body->restitution = restitution;
   body->radius = width * height;
-  body->color = color;  
+  body->sdl_color = color; 
+  body->hit_color =  (SDL_Color){ 255, 0, 0, 255}; 
   shape->type = SHAPE_BOX;
   shape->b.height = height;
   shape->b.width = width;
   shape->b.points[0] = (vec2){-6,-6};
   shape->b.points[1] = (vec2){6,-6};
-  shape->b.points[2] = (vec2){-6,6};
-  shape->b.points[3] = (vec2){6,6};
-
+  shape->b.points[2] = (vec2){6,6};
+  shape->b.points[3] = (vec2){-6,6};
 }
 
 

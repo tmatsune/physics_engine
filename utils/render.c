@@ -16,9 +16,8 @@ static SDL_Texture* create_filled_rect_texture(SDL_Renderer *renderer, int w, in
     return texture;
 }
 
-void draw_rect(int x, int y, int w, int h, uint32_t color, float angle, SDL_Renderer *renderer){
-  (void)color;
-  SDL_Color rect_color = { 255, 0, 0, 255 };
+void draw_rect(int x, int y, int w, int h, SDL_Color color, float angle, SDL_Renderer *renderer){
+  SDL_Color rect_color =  color; //{ 255, 0, 0, 255 };
   SDL_Texture *texture = create_filled_rect_texture(renderer, w, h, rect_color);
   SDL_Rect dstrect = { x, y, w, h };
   SDL_Point center = { w / 2, h / 2 };

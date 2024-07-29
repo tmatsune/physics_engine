@@ -7,6 +7,8 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <math.h>
+#include "SDL.h"
+
 /*
  640 meters by 640 meters 
  seconds 
@@ -21,6 +23,7 @@ typedef uint8_t u8;
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 640
 #define CELL_SIZE 32
+
 
 void print(char *str);
 void print_int(int num);
@@ -101,6 +104,7 @@ void print(char *str);
 void print_int(int num);
 void vec_print(const vec2 v);
 void print_float(float num);
+void endl(void);
 
 
 #endif // !UTILS_H
