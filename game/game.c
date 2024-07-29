@@ -125,9 +125,7 @@ void game_render(game *g){
       int wasd[] = {g->keys->w, g->keys->a, g->keys->s, g->keys->d};
       control_body(obj, lrud, wasd);
       physics_object* other = (physics_object*)array_get(g->objects, 1);
-      bool colliding = polygon_collision(obj, other); 
-      if(colliding) print("COLLIDING");
-      else print("NOT COLLIDING");
+      bool colliding __attribute__((unused)) = polygon_collision(obj, other); 
     }
  
   }
