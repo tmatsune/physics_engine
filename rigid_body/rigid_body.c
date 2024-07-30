@@ -17,17 +17,17 @@ static void handle_borders_circle(rigid_body *self){
   if(self->pos.y + self->radius > SCREEN_HEIGHT || self->pos.y - self->radius < 0){self->vel.y *= -1;}
 }
 
-static inline  void add_to_pos(rigid_body *self, const float dx, const float dy){ self->pos.x += dx; self->pos.y += dy; }
-static inline void sub_from_pos(rigid_body *self, const float dx, const float dy){ self->pos.x -= dx; self->pos.y -= dy; }
-static inline void add_to_vel(rigid_body *self, const float dx, const float dy){ self->vel.x += dx; self->vel.y += dy; }
-static inline void change_pos(rigid_body *self, const vec2 vel){ self->pos.x += vel.x, self->pos.y += vel.y; }
+static void add_to_pos(rigid_body *self, const float dx, const float dy){ self->pos.x += dx; self->pos.y += dy; }
+static void sub_from_pos(rigid_body *self, const float dx, const float dy){ self->pos.x -= dx; self->pos.y -= dy; }
+static void add_to_vel(rigid_body *self, const float dx, const float dy){ self->vel.x += dx; self->vel.y += dy; }
+static void change_pos(rigid_body *self, const vec2 vel){ self->pos.x += vel.x, self->pos.y += vel.y; }
 
 static void handle_angle(physics_object *self){
   if(self->body.angle > 359) self->body.angle -= 360;
   if(self->body.angle < 0) self->body.angle += 360;
 }
 
-static inline void move(physics_object *object, const vec2 vel){
+static void move(physics_object *object, const vec2 vel){
   change_pos(&object->body, vel);
 }
 
@@ -181,14 +181,13 @@ bool polygon_collision(physics_object *self, physics_object *other){
     vec2 normal_axis = (vec2){-edge.y, edge.x}; // normal that points away from edge polygon
 
     //SDL_RenderDrawLine(self->renderer, va.x, va.y, va.x + ref_normal_axis.x, va.y + ref_normal_axis.y);
-    float max_a = -10000;
-    float min_a = 10000;
-    float max_b = -10000;
-    float min_b = 10000;
+    float max_a = -1000000;
+    float min_a = 1000000;
+    float max_b = -1000000;
+    float min_b = 1000000;
 
     project_vertices(self->body.pos, self->shape.b.points, normal_axis, &min_a, &max_a);
     project_vertices(other->body.pos, other->shape.b.points, normal_axis, &min_b, &max_b);
-
 
     if( min_a >= max_b || min_b >= max_a ){
       return false;
@@ -210,15 +209,15 @@ bool polygon_collision(physics_object *self, physics_object *other){
 
     vec2 edge = vec_sub(vb, va);
     vec2 normal_axis = (vec2){-edge.y, edge.x}; // normal that points away from edge polygon
-    float max_a = -10000;
-    float min_a = 10000;
-    float max_b = -10000;
-    float min_b = 10000;
+    float max_a = -1000000;
+    float min_a = 1000000;
+    float max_b = -1000000;
+    float min_b = 1000000;
 
     project_vertices(other->body.pos, other->shape.b.points, normal_axis, &min_a, &max_a);
     project_vertices(self->body.pos, self->shape.b.points, normal_axis, &min_b, &max_b);
     // SDL_RenderDrawLine(self->renderer, va.x, va.y, vb.x, vb.y);
-
+    
     if( min_a >= max_b || min_b >= max_a ){
       return false;
     }
@@ -228,24 +227,24 @@ bool polygon_collision(physics_object *self, physics_object *other){
       depth = axis_depth;
       normal = normal_axis;
     }
-      
-    depth /= length(normal);
-    normal = normalize(normal);
     
-    vec2 center_a = arithmetic_mean(self->body.pos, self->shape.b.points, self->len_points);
-    vec2 center_b = arithmetic_mean(other->body.pos, other->shape.b.points, other->len_points);
-    vec2 dir = vec_sub(center_b, center_a);
-  
-    vec_scale(dir, 2);
-    SDL_RenderDrawLine(self->renderer, center_a.x, center_a.y, center_a.x + dir.x, center_a.y + dir.y);
-
-    if(dot(dir, normal) < 0){
-      normal.x = -normal.x;
-      normal.y = -normal.y;
-    }
- 
   }
 
+  depth /= length(normal);
+  normal = normalize(normal);
+  
+  vec2 center_a = arithmetic_mean(self->body.pos, self->shape.b.points, self->len_points);
+  vec2 center_b = arithmetic_mean(other->body.pos, other->shape.b.points, other->len_points);
+  vec2 dir = vec_sub(center_b, center_a);
+
+  vec_scale(dir, 2);
+  SDL_RenderDrawLine(self->renderer, center_a.x, center_a.y, center_a.x + dir.x, center_a.y + dir.y);
+
+  if(dot(dir, normal) < 0){
+    normal.x = -normal.x;
+    normal.y = -normal.y;
+  }
+  
   vec2 movement_a = (vec2){normal.x * (depth/2), normal.y * (depth/2)};
   vec2 movement_b = (vec2){-normal.x * (depth/2), -normal.y * (depth/2)};
   
@@ -273,7 +272,7 @@ void box_init(rigid_body *self, float x, float y, float width, float height, flo
 }
 
 void box_render(physics_object *self, SDL_Renderer *renderer){
-  draw_rect(self->body.pos.x, self->body.pos.y, self->shape.b.width, self->shape.b.height, self->body.sdl_color, self->body.angle, renderer);
+  //draw_rect(self->body.pos.x, self->body.pos.y, self->shape.b.width, self->shape.b.height, self->body.sdl_color, self->body.angle, renderer);
   SDL_SetRenderDrawColor(self->renderer, 255, 0, 0, 255);
   for(int i = 0; i < 4; i++){
     draw_rect(self->body.pos.x + (self->shape.b.points[i].x) , self->body.pos.y + (self->shape.b.points[i].y), 2, 2, self->body.sdl_color, 0, renderer);
