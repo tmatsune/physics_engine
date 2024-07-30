@@ -13,11 +13,11 @@ main: main.o utils.o game.o assert.o rigid_body.o render.o
 main.o: main.c
 	gcc $(CFLAGS) -c main.c -o main.o
 
-game.o: game/game.c game/game.h assert/assert.h utils/utils.h utils/render.h rigid_body/rigid_body.o
+game.o: game/game.c game/game.h assert/assert.h utils/utils.h utils/render.h physics/rigid_body.o
 	gcc $(CFLAGS) -c game/game.c -o game.o 
 
-rigid_body.o: rigid_body/rigid_body.c assert/assert.h utils/utils.h utils/render.h game/game.h
-	gcc $(CFLAGS) -c rigid_body/rigid_body.c -o rigid_body.o
+rigid_body.o: physics/rigid_body.c assert/assert.h utils/utils.h utils/render.h game/game.h
+	gcc $(CFLAGS) -c physics/rigid_body.c -o rigid_body.o
 
 utils.o: utils/utils.c utils/utils.h assert/assert.h 
 	gcc $(CFLAGS) -c utils/utils.c -o utils.o

@@ -7,7 +7,7 @@
 #include <time.h> 
 #include "SDL.h"
 #include "../utils/utils.h"
-#include "../rigid_body/rigid_body.h"
+#include "../physics/rigid_body.h"
 #include "../utils/render.h"
 
 typedef uint32_t u32;
