@@ -8,6 +8,7 @@
 #include "SDL.h"
 #include "../utils/utils.h"
 #include "../physics/rigid_body.h"
+#include "../physics/physics_world.h"
 #include "../utils/render.h"
 
 typedef uint32_t u32;
@@ -26,7 +27,7 @@ typedef struct {
   bool quit;
   SDL_Window *window;
   SDL_Renderer *renderer;
-  dynamic_array *objects;
+  physics_world *world;
   rigid_body *main_body;
 } game;
 

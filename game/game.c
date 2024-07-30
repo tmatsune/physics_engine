@@ -32,7 +32,7 @@ static void gen_objects(game *g){
       }
       default:{break;}
     };
-    array_append(g->objects, object, sizeof(physics_object));
+    array_append(g->world->objects, object, sizeof(physics_object));
   
   }
 }
@@ -80,9 +80,8 @@ void game_init(game *g){
         g->renderer == NULL,
         "failed to create SDL renderer: %s\n", SDL_GetError());
   
-    g->objects = malloc(sizeof(dynamic_array));
-    ASSERT(g->objects == NULL, "Failed to allocate memory for all objs");
-    array_init(g->objects);
+    g->world = malloc(sizeof(physics_world)); 
+    physics_world_init(g->world);
 
     test_init(g);
 
@@ -106,30 +105,11 @@ void game_render(game *g){
 
   // ----- RENDER ----- // 
 
-  for(int i = 0; i < (int)g->objects->count; i++){
 
-    physics_object *obj = (physics_object*)array_get(g->objects, i);
-    switch(obj->shape.type){
-      case SHAPE_BOX:{
-        box_render(obj, g->renderer);
-        box_update(obj, g->dt);
-        break;
-      }
-      case SHAPE_CIRCLE:{
-       
-        break;
-      }
-    }
-    if(i == 0){
-      int lrud[] = {g->keys->left, g->keys->right, g->keys->up, g->keys->down};
-      int wasd[] = {g->keys->w, g->keys->a, g->keys->s, g->keys->d};
-      control_body(obj, lrud, wasd);
-      physics_object* other = (physics_object*)array_get(g->objects, 1);
-      bool colliding __attribute__((unused)) = polygon_collision(obj, other); 
-    }
- 
-  }
-
+  int lrud[] = {g->keys->left, g->keys->right, g->keys->up, g->keys->down};
+  int wasd[] = {g->keys->w, g->keys->a, g->keys->s, g->keys->d};
+  physics_world_run(g->world, lrud, wasd, g->dt, g->renderer);
+  
 
    // ------------------ // 
 
@@ -212,9 +192,10 @@ void game_run(game *g){
     SDL_Delay(16);
   } 
   // ---------------------- // 
-  array_free(g->objects);
-  free(g->objects);
+  //array_free(g->objects);
+  //free(g->objects);
 
+  free(g->world);
   free(g->keys);
 
 

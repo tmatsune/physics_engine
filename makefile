@@ -7,17 +7,20 @@ LDFLAGS = `sdl2-config --libs` -lSDL2_image
 # Targets
 all: main
 
-main: main.o utils.o game.o assert.o rigid_body.o render.o 
-	gcc main.o utils.o game.o assert.o rigid_body.o render.o -o main $(LDFLAGS)
+main: main.o utils.o game.o assert.o rigid_body.o render.o physics_world.o  
+	gcc main.o utils.o game.o assert.o rigid_body.o render.o physics_world.o -o main $(LDFLAGS)
 
 main.o: main.c
 	gcc $(CFLAGS) -c main.c -o main.o
 
-game.o: game/game.c game/game.h assert/assert.h utils/utils.h utils/render.h physics/rigid_body.o
+game.o: game/game.c game/game.h assert/assert.h utils/utils.h utils/render.h physics/rigid_body.h physics/physics_world.h
 	gcc $(CFLAGS) -c game/game.c -o game.o 
 
 rigid_body.o: physics/rigid_body.c assert/assert.h utils/utils.h utils/render.h game/game.h
 	gcc $(CFLAGS) -c physics/rigid_body.c -o rigid_body.o
+
+physics_world.o: physics/physics_world.c physics/rigid_body.h utils/utils.h 
+	gcc $(CFLAGS) -c physics/physics_world.c -o physics_world.o
 
 utils.o: utils/utils.c utils/utils.h assert/assert.h 
 	gcc $(CFLAGS) -c utils/utils.c -o utils.o

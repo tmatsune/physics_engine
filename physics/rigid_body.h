@@ -73,6 +73,7 @@ void circle_on_circle_collision(rigid_body *self, rigid_body *other);
 
 bool polygon_collision(physics_object *self, physics_object *other);
 
+bool polygon_triangle_collision(physics_object *self, physics_object *other);
 
 // ------------ BOX FUNCTIONS --------- // 
 void box_init(rigid_body *self, float x, float y, float width, float height, float mass, float density, float restitution, uint32_t color);
