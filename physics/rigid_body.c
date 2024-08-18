@@ -20,6 +20,7 @@ static void handle_borders_circle(rigid_body *self){
 static void add_to_pos(rigid_body *self, const float dx, const float dy){ self->pos.x += dx; self->pos.y += dy; }
 static void sub_from_pos(rigid_body *self, const float dx, const float dy){ self->pos.x -= dx; self->pos.y -= dy; }
 static void add_to_vel(rigid_body *self, const float dx, const float dy){ self->vel.x += dx; self->vel.y += dy; }
+static void sub_from_vel(rigid_body *self, const float dx, const float dy){ self->vel.x -= dx; self->vel.y -= dy; }
 static void change_pos(rigid_body *self, const vec2 vel){ self->pos.x += vel.x, self->pos.y += vel.y; }
 
 static void handle_angle(physics_object *self){
@@ -27,7 +28,7 @@ static void handle_angle(physics_object *self){
   if(self->body.angle < 0) self->body.angle += 360;
 }
 
-static void move(physics_object *object, const vec2 vel){
+static void move(physics_object *object, vec2 vel){
   change_pos(&object->body, vel);
 }
 
@@ -54,10 +55,10 @@ void apply_force(rigid_body *self, vec2 force){
 } 
 void control_body(physics_object *self, int *lrud, int *wasd){
   vec2 force = {0, 0};
-  if (lrud[0]) force.x -= 600; // Arbitrary force value
-  if (lrud[1]) force.x += 600;
-  if (lrud[2]) force.y -= 600;
-  if (lrud[3]) force.y += 600;
+  if (lrud[0]) force.x -= 700; // Arbitrary force value
+  if (lrud[1]) force.x += 700;
+  if (lrud[2]) force.y -= 700;
+  if (lrud[3]) force.y += 700;
   apply_force(&self->body, force);
   float ang = 0;
   if(wasd[0]){};
@@ -74,6 +75,7 @@ void control_body(physics_object *self, int *lrud, int *wasd){
 void body_move(rigid_body *self, float dt){
   self->vel.x += self->accel.x * dt;
   self->vel.y += self->accel.y * dt;
+  vec_print(self->vel);
   // Integrate velocity to update position
   add_to_pos(self, self->vel.x * dt, self->vel.y * dt);
   // Reset acceleration after applying
@@ -118,6 +120,7 @@ void change_property(rigid_body *self, shape_property prop, float new_num){
 }
 
 // COLLISIONS
+
 void circle_on_circle_collision(rigid_body *self, rigid_body *other){
   int dist = get_distance(self->pos.x, self->pos.y, other->pos.x, other->pos.y);
   if(dist < self->radius + other->radius){
@@ -150,14 +153,25 @@ void circle_on_circle_collision(rigid_body *self, rigid_body *other){
   }
 }
 
+// 
+static void resolve_collision(rigid_body *body_a, rigid_body *body_b, vec2 normal, float depth){
+  float j = 0;
 
+  vec2 impulse_a = { (j / body_a->mass) * normal.x, (j / body_a->mass) * normal.y };
+  vec2 impulse_b = { (j / body_a->mass) * normal.x, (j / body_a->mass) * normal.y };
+  add_to_vel(body_a, impulse_a.x, impulse_a.y);
+  sub_from_vel(body_b, impulse_b.x, impulse_b.y);
+}
+
+
+// ------------------- POLYGON COLLISIONS ----------------- // 
 
 static void project_vertices(vec2 pos, vec2 *points, vec2 axis, float *mn, float *mx){
   for(int i = 0; i < 4; i++){
   
     vec2 vertex = points[i];
-    vec_translate_world_pos(&vertex, pos.x, pos.y);
-    float projection = dot(vertex, axis);
+    vec_translate_world_pos(&vertex, pos.x, pos.y); // get translated points from all 4 vector points on polygon 
+    float projection = dot(vertex, axis);           // project curr vertex on axis 
     if(projection < *mn){ *mn = projection; }
     if(projection > *mx){ *mx = projection; }
 
@@ -233,19 +247,19 @@ bool polygon_collision(physics_object *self, physics_object *other){
   depth /= length(normal);
   normal = normalize(normal);
   
-  vec2 center_a = arithmetic_mean(self->body.pos, self->shape.b.points, self->len_points);
-  vec2 center_b = arithmetic_mean(other->body.pos, other->shape.b.points, other->len_points);
+  vec2 center_a = arithmetic_mean(self->body.pos, self->shape.b.points, self->len_points);    // get center of curr shape 
+  vec2 center_b = arithmetic_mean(other->body.pos, other->shape.b.points, other->len_points); // get center of other shape
   vec2 dir = vec_sub(center_b, center_a);
 
   vec_scale(dir, 2);
   SDL_RenderDrawLine(self->renderer, center_a.x, center_a.y, center_a.x + dir.x, center_a.y + dir.y);
 
-  if(dot(dir, normal) < 0){
+  if(dot(dir, normal) < 0){ // reverse direction of normal if collision for a is on bottom and a is colliding on left 
     normal.x = -normal.x;
     normal.y = -normal.y;
   }
   
-  vec2 movement_a = (vec2){normal.x * (depth/2), normal.y * (depth/2)};
+  vec2 movement_a = (vec2){normal.x * (depth/2), normal.y * (depth/2)};   // movement vector by getting the normal and scaling 
   vec2 movement_b = (vec2){-normal.x * (depth/2), -normal.y * (depth/2)};
   
   move(other, movement_a);
@@ -318,7 +332,7 @@ void circle_render(rigid_body *self, SDL_Renderer *renderer){
 void circle_update(rigid_body *self, float dt){
   circle_print_contents(self);
   body_move(self, dt);
-  apply_friction_beta(self);
+  //apply_friction_beta(self);
   handle_borders_circle(self);
 }
 
