@@ -8,7 +8,7 @@
 #include "../utils/render.h"
 
 typedef enum {
-  SHAPE_BOX, SHAPE_CIRCLE,
+  SHAPE_BOX, SHAPE_CIRCLE, SHAPE_STATIC_BOX,
 } shape_type;
 
 typedef struct {
@@ -16,6 +16,7 @@ typedef struct {
   vec2 vel;
   vec2 accel;
   float mass;
+  float inv_mass;
   float angle;
   float density;
   float restitution;
@@ -25,6 +26,7 @@ typedef struct {
   float width;
 
   float radius;
+  bool is_static;
   shape_type shape; 
   uint32_t color;
   SDL_Color sdl_color;
@@ -80,8 +82,9 @@ void box_init(rigid_body *self, float x, float y, float width, float height, flo
 
 void box_render(physics_object *self, SDL_Renderer *renderer);
 
-void box_update(physics_object *self, float dt);
+void box_update(physics_object *self, const float dt);
 
+void static_box_update(physics_object *self, const float dt);
 
 // ----------- CIRCLE FUNCTIONS ----------- // 
 void circle_init(rigid_body *rb, float x, float y, float mass, float density, float restitution, float radius, uint32_t color);
@@ -92,8 +95,12 @@ void circle_update(rigid_body *self, float dt);
 
 // --------------- PHYSICS OBJECT FUNCTIONS ---------- // 
 
+// ---------- BOX 
 void box_shape_init(rigid_body *body, shape_struct *shape, float x, \
                            float y, float width, float height, float mass, \
                            float density, float restitution, SDL_Color color);
+// ---------- STATIC BOX 
+void static_box_shape_init(rigid_body *body, shape_struct *shape, float x, float y, float width, float height, float mass, float density, float restitution, SDL_Color color);
+
 
 #endif // !RIGID_BODY_H

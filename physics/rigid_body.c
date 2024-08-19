@@ -20,7 +20,7 @@ static void handle_borders_circle(rigid_body *self){
 static void add_to_pos(rigid_body *self, const float dx, const float dy){ self->pos.x += dx; self->pos.y += dy; }
 static void sub_from_pos(rigid_body *self, const float dx, const float dy){ self->pos.x -= dx; self->pos.y -= dy; }
 static void add_to_vel(rigid_body *self, const float dx, const float dy){ self->vel.x += dx; self->vel.y += dy; }
-static void sub_from_vel(rigid_body *self, const float dx, const float dy){ self->vel.x -= dx; self->vel.y -= dy; }
+//static void sub_from_vel(rigid_body *self, const float dx, const float dy){ self->vel.x -= dx; self->vel.y -= dy; }
 static void change_pos(rigid_body *self, const vec2 vel){ self->pos.x += vel.x, self->pos.y += vel.y; }
 
 static void handle_angle(physics_object *self){
@@ -65,7 +65,6 @@ void control_body(physics_object *self, int *lrud, int *wasd){
   if(wasd[1]){self->body.angle -= 6; ang = -6;}
   if(wasd[2]){};
   if(wasd[3]){self->body.angle += 6; ang = 6;}
-  
   for(int i = 0; i < self->len_points; i++){
     vec_rotate(&self->shape.b.points[i], rad(ang)); 
   }
@@ -75,7 +74,6 @@ void control_body(physics_object *self, int *lrud, int *wasd){
 void body_move(rigid_body *self, float dt){
   self->vel.x += self->accel.x * dt;
   self->vel.y += self->accel.y * dt;
-  vec_print(self->vel);
   // Integrate velocity to update position
   add_to_pos(self, self->vel.x * dt, self->vel.y * dt);
   // Reset acceleration after applying
@@ -153,15 +151,16 @@ void circle_on_circle_collision(rigid_body *self, rigid_body *other){
   }
 }
 
-// 
+/* 
 static void resolve_collision(rigid_body *body_a, rigid_body *body_b, vec2 normal, float depth){
   float j = 0;
-
+  (void)depth;
   vec2 impulse_a = { (j / body_a->mass) * normal.x, (j / body_a->mass) * normal.y };
   vec2 impulse_b = { (j / body_a->mass) * normal.x, (j / body_a->mass) * normal.y };
   add_to_vel(body_a, impulse_a.x, impulse_a.y);
   sub_from_vel(body_b, impulse_b.x, impulse_b.y);
 }
+*/
 
 
 // ------------------- POLYGON COLLISIONS ----------------- // 
@@ -179,6 +178,30 @@ static void project_vertices(vec2 pos, vec2 *points, vec2 axis, float *mn, float
 
 }
 
+static void resolve_polygon_collision(physics_object *self, physics_object *other, vec2 normal, float depth){
+  vec2 relative_vel = vec_sub(other->body.vel, self->body.vel);
+  if ( dot(relative_vel, normal) > 0 ){
+    return;
+  }
+  float e = min(self->body.restitution, other->body.restitution);
+  float j = -(1 + e) * dot(relative_vel, normal);
+  j /= self->body.inv_mass + other->body.inv_mass;
+
+  vec2 impulse = (vec2){normal.x * j, normal.y * j};
+  self->body.vel.x -= self->body.inv_mass * impulse.x;    // apply movment to vel for A body 
+  self->body.vel.y -= self->body.inv_mass * impulse.y;  
+
+  other->body.vel.x += other->body.inv_mass * impulse.x;
+  other->body.vel.y += other->body.inv_mass * impulse.y;
+  
+  (void)depth;
+}
+
+/*  
+  systematically checks if there is any axis where the two polygons don’t overlap
+  If such an axis is found, they are not colliding. If they overlap on all axes, 
+  the polygons are colliding, and the function computes and applies the necessary movement to separate them.
+*/
 bool polygon_collision(physics_object *self, physics_object *other){
     
   vec2 normal = (vec2){0,0};
@@ -261,10 +284,17 @@ bool polygon_collision(physics_object *self, physics_object *other){
   
   vec2 movement_a = (vec2){normal.x * (depth/2), normal.y * (depth/2)};   // movement vector by getting the normal and scaling 
   vec2 movement_b = (vec2){-normal.x * (depth/2), -normal.y * (depth/2)};
+ 
+  if(self->body.is_static){
+    move(other, movement_a);
+  }else if (other->body.is_static){
+    move(self, movement_b);
+  }else{
+    move(other, movement_a);
+    move(self, movement_b);
+  }
+  resolve_polygon_collision(self, other, normal, depth);
   
-  move(other, movement_a);
-  move(self, movement_b);
-
   return true;
 }
 
@@ -298,11 +328,19 @@ void box_render(physics_object *self, SDL_Renderer *renderer){
   }
 }   
 
-void box_update(physics_object *self, float dt){
+// ------- BOX UPDATE
+void box_update(physics_object *self, const float dt){
   body_move(&self->body, dt);
-  apply_friction_beta(&self->body);
+  self->body.vel.y += 490 * dt;
+  //apply_friction_beta(&self->body);
   handle_angle(self);
 }
+// ------- STATIC BOX UPDATE 
+void static_box_update(physics_object *self, const float dt){
+  (void)self;
+  (void)dt;
+}
+
 
 // ----------- CIRCLE FUNCTIONS ----------- // 
 
@@ -332,7 +370,7 @@ void circle_render(rigid_body *self, SDL_Renderer *renderer){
 void circle_update(rigid_body *self, float dt){
   circle_print_contents(self);
   body_move(self, dt);
-  //apply_friction_beta(self);
+  apply_friction_beta(self);
   handle_borders_circle(self);
 }
 
@@ -347,11 +385,13 @@ void box_shape_init(rigid_body *body, shape_struct *shape, float x, \
   body->accel = (vec2){0, 0};
   body->angle = 0;
   body->mass = mass;
+  body->inv_mass = 1 / mass;
   body->density = density;
   body->restitution = restitution;
   body->radius = width * height;
   body->sdl_color = color; 
   body->hit_color =  (SDL_Color){ 255, 0, 0, 255}; 
+  body->is_static = false;
   shape->type = SHAPE_BOX;
   shape->b.height = height;
   shape->b.width = width;
@@ -360,5 +400,31 @@ void box_shape_init(rigid_body *body, shape_struct *shape, float x, \
   shape->b.points[2] = (vec2){16,16};
   shape->b.points[3] = (vec2){-16,16};
 }
+
+ 
+void static_box_shape_init(rigid_body *body, shape_struct *shape, float x, float y, float width, float height, float mass, float density, float restitution, SDL_Color color){
+  body->pos = (vec2){x, y};
+  body->vel = (vec2){0, 0};
+  body->accel = (vec2){0, 0};
+  body->angle = 0;
+  body->mass = mass;
+  body->inv_mass = 0;
+  body->density = density;
+  body->restitution = restitution;
+  body->radius = width * height;
+  body->sdl_color = color; 
+  body->hit_color =  (SDL_Color){ 255, 0, 0, 255}; 
+  body->is_static = true;
+  shape->type = SHAPE_STATIC_BOX;
+  shape->b.height = height;
+  shape->b.width = width;
+  shape->b.points[0] = (vec2){-186,-16};
+  shape->b.points[1] = (vec2){186,-16};
+  shape->b.points[2] = (vec2){186,16};
+  shape->b.points[3] = (vec2){-186,16};
+}
+
+
+
 
 

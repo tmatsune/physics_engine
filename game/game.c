@@ -8,7 +8,7 @@ static void keys_init(key_state *keys){
 
 static void gen_objects(game *g){
 
-  for(int i = 0; i < 2; i++){
+  for(int i = 0; i < 3; i++){
     int min = 10;
     int max = 520;
     int x = rand() % (max - min + 1) + min;
@@ -20,12 +20,25 @@ static void gen_objects(game *g){
       exit(EXIT_FAILURE); 
     }
     shape_type shape_t = SHAPE_BOX;
+    if(i == 2){
+      shape_t = SHAPE_STATIC_BOX;
+    }
+
     switch(shape_t){
       case SHAPE_BOX: {
-        box_shape_init(&object->body, &object->shape, x, y, w, h, 1, 1, 1, (SDL_Color){ 255, 255, 255, 255 });
+        // rigid_body *body, shape_struct *shape, float x,float y, float width, float height 
+        //  float mass in g, float density, float restitution, SDL_Color color
+        box_shape_init(&object->body, &object->shape, x, y, w, h, 1, 1, .5, (SDL_Color){ 255, 255, 255, 255 });
         object->renderer = g->renderer;
         object->len_points = 4;
         break;
+      }
+      case SHAPE_STATIC_BOX: {
+        static_box_shape_init(&object->body, &object->shape, 150, 500, 200, 18, 1, 1, .2, (SDL_Color){ 255, 255, 0, 255 });
+        object->renderer = g->renderer;
+        object->len_points = 4;
+        break;
+
       }
       case SHAPE_CIRCLE: {
         break;

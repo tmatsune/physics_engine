@@ -29,6 +29,12 @@ void physics_world_run(physics_world *self, int *lrud, int *wasd, float dt, SDL_
         box_update(obj, dt);
         break;
       }
+      case SHAPE_STATIC_BOX: {
+        box_render(obj, renderer);
+        static_box_update(obj, dt);
+        break;
+
+      }
       case SHAPE_CIRCLE:{
         break;
       }
@@ -39,15 +45,35 @@ void physics_world_run(physics_world *self, int *lrud, int *wasd, float dt, SDL_
       //int wasd[] = {g->keys->w, g->keys->a, g->keys->s, g->keys->d};
       control_body(obj, lrud, wasd);
       physics_object *other = physics_world_get_object(self, 1);
+      physics_object *static_other = physics_world_get_object(self, 2);
       switch(other->shape.type){
         case SHAPE_BOX: {
-          bool colliding __attribute__((unused)) = polygon_collision(obj, other); 
+          bool colliding __attribute__((unused)) = polygon_collision(obj, other);
+          break;
+        }
+        case SHAPE_STATIC_BOX: {
+          bool colliding __attribute__((unused)) = polygon_collision(obj, other);
+          printf("%d\n", colliding);
           break;
         }
         case SHAPE_CIRCLE: {
           break;
         }
       }
+      switch(static_other->shape.type){
+        case SHAPE_BOX: {
+          bool colliding __attribute__((unused)) = polygon_collision(obj, other);
+          break;
+        }
+        case SHAPE_STATIC_BOX: {
+          bool colliding __attribute__((unused)) = polygon_collision(obj, static_other);
+          break;
+        }
+        case SHAPE_CIRCLE: {
+          break;
+        }
+      }
+
     }
   
   
