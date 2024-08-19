@@ -326,14 +326,21 @@ void box_render(physics_object *self, SDL_Renderer *renderer){
     vec_translate_world_pos(&vb, self->body.pos.x, self->body.pos.y);
     SDL_RenderDrawLine(self->renderer, va.x, va.y, vb.x, vb.y);
   }
+  draw_rect(self->body.pos.x, self->body.pos.y, 1, 1, self->body.sdl_color, 0, renderer);
 }   
 
 // ------- BOX UPDATE
 void box_update(physics_object *self, const float dt){
+
+  for(int i = 2; i < 4; i++){
+  float delt = dt / i;
   body_move(&self->body, dt);
-  self->body.vel.y += 490 * dt;
+  self->body.vel.y += 490 * delt;
   //apply_friction_beta(&self->body);
   handle_angle(self);
+
+  }
+
 }
 // ------- STATIC BOX UPDATE 
 void static_box_update(physics_object *self, const float dt){
